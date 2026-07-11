@@ -2,7 +2,7 @@
 
 [![Release](https://img.shields.io/github/v/release/mansoor/cloudflare-ddns-ui?sort=semver)](https://github.com/mansoor/cloudflare-ddns-ui/releases)
 [![GHCR image](https://img.shields.io/badge/ghcr.io-cloudflare--ddns--ui-1668dc?logo=docker&logoColor=white)](https://github.com/mansoor/cloudflare-ddns-ui/pkgs/container/cloudflare-ddns-ui)
-[![License: MIT](https://img.shields.io/badge/license-MIT-green)](#license)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](LICENSE)
 
 A small self-hosted **dynamic DNS updater for Cloudflare** with a clean web UI — inspired by
 [timothymiller/cloudflare-ddns](https://github.com/timothymiller/cloudflare-ddns), but you configure
@@ -182,4 +182,4 @@ workflow builds and publishes `ghcr.io/mansoor/cloudflare-ddns-ui` with `:vX.Y.Z
 
 ## License
 
-MIT
+MIT — see [LICENSE](LICENSE).
