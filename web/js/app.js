@@ -783,10 +783,26 @@ function toggleDdnsFields(node) {
 }
 
 // One FreeDNS update token/URL row.
-function makeDdnsUrlRow(node, value = '') {
+function makeDdnsUrlRow(node, value = '', { masked = false } = {}) {
   const row = $('#ddns-url-template').content.firstElementChild.cloneNode(true);
-  $('.ddns-url', row).value = value;
+  const input = $('.ddns-url', row);
+  input.value = value;
   $('.ddns-url-remove', row).addEventListener('click', () => row.remove());
+
+  // Existing (already-saved) URLs load masked with an eye toggle to reveal.
+  // A blank/new row has nothing to hide, so it stays plain text.
+  const reveal = $('.ddns-url-reveal', row);
+  if (masked && value) {
+    input.type = 'password';
+    reveal.classList.remove('hidden');
+    reveal.addEventListener('click', () => {
+      const hidden = input.type === 'password';
+      input.type = hidden ? 'text' : 'password';
+      $('.ddns-eye', reveal).classList.toggle('hidden', hidden);
+      $('.ddns-eye-off', reveal).classList.toggle('hidden', !hidden);
+      reveal.title = hidden ? 'Hide URL' : 'Show URL';
+    });
+  }
   return row;
 }
 
@@ -833,7 +849,7 @@ function makeDdnsRow(p = {}, { expanded = false } = {}) {
   // FreeDNS update-URL rows (start with one empty row).
   const urlsWrap = $('.ddns-urls', node);
   const urls = p.urls && p.urls.length ? p.urls : [''];
-  urls.forEach((u) => urlsWrap.appendChild(makeDdnsUrlRow(node, u)));
+  urls.forEach((u) => urlsWrap.appendChild(makeDdnsUrlRow(node, u, { masked: true })));
 
   const tokenInput = $('.ddns-token', node);
   if (p.token_hint) {
