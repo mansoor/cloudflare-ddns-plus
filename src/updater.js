@@ -7,6 +7,8 @@ import { detectIP } from './ip.js';
 import * as state from './state.js';
 import { getLastIPs, setLastIPs } from './runtime.js';
 import { notifyAll } from './notify.js';
+import { updateDdnsProvider } from './ddns.js';
+import { DDNS_ENABLED } from './features.js';
 
 // Build the fully-qualified domain name for a subdomain within a zone.
 function buildFqdn(subName, zoneName) {
@@ -129,26 +131,41 @@ async function syncWafList(list, { ipv4, ipv6, wantV4, wantV6 }) {
  * Scope: pass accountId to sync one zone only, or wafId to sync one WAF list only.
  * @returns {Promise<{result:'ok'|'partial'|'error', message:string, records:Array}>}
  */
-export async function runUpdate(cfg, { trigger = 'manual', accountId = null, wafId = null } = {}) {
+export async function runUpdate(
+  cfg,
+  { trigger = 'manual', accountId = null, wafId = null, ddnsId = null } = {}
+) {
   if (state.getState().running) {
     return { result: 'partial', message: 'An update is already in progress', records: [] };
   }
-  // Scope selection: a zone-scoped run skips WAF, a WAF-scoped run skips DNS.
-  const accounts = wafId
-    ? []
-    : accountId
-    ? cfg.cloudflare.filter((a) => a.id === accountId)
-    : cfg.cloudflare;
-  const wafLists = accountId
-    ? []
-    : wafId
-    ? cfg.waf_lists.filter((w) => w.id === wafId)
-    : cfg.waf_lists;
+  // Scope selection: a scoped run touches only its own section.
+  const accounts =
+    wafId || ddnsId
+      ? []
+      : accountId
+      ? cfg.cloudflare.filter((a) => a.id === accountId)
+      : cfg.cloudflare;
+  const wafLists =
+    accountId || ddnsId
+      ? []
+      : wafId
+      ? cfg.waf_lists.filter((w) => w.id === wafId)
+      : cfg.waf_lists;
+  const ddnsProviders =
+    !DDNS_ENABLED || accountId || wafId
+      ? []
+      : ddnsId
+      ? cfg.ddns_providers.filter((p) => p.id === ddnsId)
+      : cfg.ddns_providers;
+
   if (accountId && accounts.length === 0) {
     return { result: 'error', message: 'Zone not found — save it first', records: [] };
   }
   if (wafId && wafLists.length === 0) {
     return { result: 'error', message: 'WAF list not found — save it first', records: [] };
+  }
+  if (ddnsId && ddnsProviders.length === 0) {
+    return { result: 'error', message: 'DDNS provider not found — save it first', records: [] };
   }
   state.setRunning(true);
   state.log('info', `Update started (${trigger})`);
@@ -270,6 +287,39 @@ export async function runUpdate(cfg, { trigger = 'manual', accountId = null, waf
           at: new Date().toISOString(),
         });
         state.log('error', `WAF ${list.list_name}: ${err.message}`);
+      }
+    }
+
+    // 5) Non-Cloudflare DDNS providers (opt-in; scoped out when disabled).
+    for (const p of ddnsProviders) {
+      if (!p.enabled) continue;
+      const typeLabel = p.type === 'dyndns2' ? 'DynDNS2' : 'DuckDNS';
+      const host = p.type === 'dyndns2' ? p.hostname : p.domains;
+      try {
+        const r = await updateDdnsProvider(p, { ipv4: cfg.a ? ipv4 : null, ipv6: cfg.aaaa ? ipv6 : null });
+        records.push({
+          fqdn: host || p.label || typeLabel,
+          type: typeLabel,
+          status: r.ok ? r.status : 'error',
+          detail: r.detail,
+          at: new Date().toISOString(),
+        });
+        if (r.ok) {
+          state.log(r.status === 'unchanged' ? 'info' : 'success', r.detail, { status: r.status });
+        } else {
+          hadError = true;
+          state.log('error', `${typeLabel} ${host || p.label}: ${r.detail}`);
+        }
+      } catch (err) {
+        hadError = true;
+        records.push({
+          fqdn: host || p.label || typeLabel,
+          type: typeLabel,
+          status: 'error',
+          detail: err.message,
+          at: new Date().toISOString(),
+        });
+        state.log('error', `${typeLabel} ${host || p.label}: ${err.message}`);
       }
     }
 

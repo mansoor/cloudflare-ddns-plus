@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { promises as fs } from 'node:fs';
 import path from 'node:path';
+import { DDNS_TYPES } from './ddns.js';
 
 export const DATA_DIR = path.resolve(process.env.DATA_DIR || './data');
 const CONFIG_PATH = path.join(DATA_DIR, 'config.json');
@@ -30,6 +31,7 @@ export function defaultConfig() {
       events: { failure: true, ip_change: true, success: false },
       channels: [],
     },
+    ddns_providers: [],
   };
 }
 
@@ -84,7 +86,28 @@ export function normalizeConfig(input) {
   cfg.cloudflare = Array.isArray(cfg.cloudflare) ? cfg.cloudflare.map(normalizeAccount) : [];
   cfg.waf_lists = Array.isArray(cfg.waf_lists) ? cfg.waf_lists.map(normalizeWaf) : [];
   cfg.notifications = normalizeNotifications(cfg.notifications);
+  cfg.ddns_providers = Array.isArray(cfg.ddns_providers)
+    ? cfg.ddns_providers.map(normalizeDdnsProvider)
+    : [];
   return cfg;
+}
+
+function normalizeDdnsProvider(p) {
+  return {
+    id: p?.id || randomUUID(),
+    type: DDNS_TYPES.includes(p?.type) ? p.type : 'duckdns',
+    enabled: p?.enabled !== false, // default on
+    label: String(p?.label || ''),
+    // DuckDNS
+    domains: String(p?.domains || '').trim(),
+    token: String(p?.token || ''),
+    // DynDNS2
+    server: String(p?.server || '').trim(),
+    hostname: String(p?.hostname || '').trim(),
+    username: String(p?.username || ''),
+    password: String(p?.password || ''),
+    https: p?.https !== false, // default true
+  };
 }
 
 function normalizeWaf(w) {
@@ -179,6 +202,13 @@ export function redactConfig(cfg) {
         auth_header_set: Boolean(c.auth_header),
       })),
     },
+    ddns_providers: cfg.ddns_providers.map((p) => ({
+      ...p,
+      token: p.token ? REDACTED_TOKEN : '',
+      token_hint: hint(p.token),
+      password: p.password ? REDACTED_TOKEN : '',
+      password_set: Boolean(p.password),
+    })),
   };
 }
 
@@ -214,6 +244,16 @@ export function mergeIncomingConfig(existing, incoming) {
       ...c,
       webhook_url: restore(c.webhook_url, prev?.webhook_url),
       auth_header: restore(c.auth_header, prev?.auth_header),
+    };
+  });
+
+  const ddnsById = new Map(existing.ddns_providers.map((p) => [p.id, p]));
+  merged.ddns_providers = merged.ddns_providers.map((p) => {
+    const prev = ddnsById.get(p.id);
+    return {
+      ...p,
+      token: restore(p.token, prev?.token),
+      password: restore(p.password, prev?.password),
     };
   });
   return merged;

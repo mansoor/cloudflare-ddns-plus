@@ -87,6 +87,7 @@ problem? See [Troubleshooting](#troubleshooting).
 | `ADMIN_PASSWORD` | *(random)*| Admin password. If unset, a random one is generated and logged once on boot |
 | `SESSION_SECRET` | *(random)*| Cookie-signing secret. If unset, one is generated and saved to `data/.session-secret` |
 | `DATA_DIR`       | `/data`   | Where `config.json` and secrets are stored (container default `/data`) |
+| `ENABLE_NON_CLOUDFLARE_DDNS` | *(off)* | Set truthy to enable the optional **Other DDNS** tab (DuckDNS / DynDNS2) |
 
 All DNS configuration lives in the UI (persisted to `data/config.json`).
 
@@ -126,6 +127,23 @@ Add channels under **Settings → Notifications** and choose which events fire (
 
 Use **Send test** on a saved channel to confirm it works. IP-change alerts fire once per change
 (the last IP is persisted to `data/runtime.json`) and never on first-ever detection.
+
+## Other DDNS providers (optional)
+
+This is a Cloudflare-first tool, but if you also have a one-off dynamic host on **DuckDNS** or a
+**DynDNS2**-compatible provider (No-IP, Dynu, Namecheap, deSEC, FreeDNS, many routers), you can keep it
+updated here too — no need for a second tool. It rides on the same schedule, IP detection, activity log,
+and notifications.
+
+Enable it by setting `ENABLE_NON_CLOUDFLARE_DDNS=true`; a **DDNS** tab appears. Then **Add provider**:
+
+| Provider | What you provide |
+|---|---|
+| **DuckDNS** | Domain(s) (without `.duckdns.org`) + your **token** |
+| **DynDNS2** | **Server host** (e.g. `dynupdate.no-ip.com`), **hostname**, **username**, **password**, HTTPS on/off |
+
+**Test** does a live update and shows the provider's response. When off, the tab is hidden and these
+providers are never contacted — your Cloudflare setup is completely unaffected either way.
 
 ## Notes & limitations
 
