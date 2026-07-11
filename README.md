@@ -1,5 +1,9 @@
 # Cloudflare DDNS UI
 
+[![Release](https://img.shields.io/github/v/release/mansoor/cloudflare-ddns-ui?sort=semver)](https://github.com/mansoor/cloudflare-ddns-ui/releases)
+[![GHCR image](https://img.shields.io/badge/ghcr.io-cloudflare--ddns--ui-1668dc?logo=docker&logoColor=white)](https://github.com/mansoor/cloudflare-ddns-ui/pkgs/container/cloudflare-ddns-ui)
+[![License: MIT](https://img.shields.io/badge/license-MIT-green)](#license)
+
 A small self-hosted **dynamic DNS updater for Cloudflare** with a clean web UI — inspired by
 [timothymiller/cloudflare-ddns](https://github.com/timothymiller/cloudflare-ddns), but you configure
 everything (API token, zones, subdomains, A/AAAA records, proxying, TTL, IP providers, schedule)
@@ -7,6 +11,8 @@ through a **Tailwind** web form instead of editing `config.json` by hand.
 
 It detects your public IPv4/IPv6 on a schedule and creates or updates the matching Cloudflare
 `A` / `AAAA` records — so a home server on a dynamic IP stays reachable via your domain.
+
+![Cloudflare DDNS UI — dashboard shown in dark and light themes](docs/screenshot.png)
 
 ## Features
 
