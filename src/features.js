@@ -4,9 +4,11 @@ function truthy(v) {
   return /^(1|true|yes|on)$/i.test(String(v || '').trim());
 }
 
-// Opt-in support for non-Cloudflare DDNS providers (DuckDNS, DynDNS2). Off by
-// default — this stays a Cloudflare-first tool.
-export const DDNS_ENABLED = truthy(process.env.ENABLE_NON_CLOUDFLARE_DDNS);
+// Opt-in support for other (non-Cloudflare) DDNS providers (DuckDNS, DynDNS2,
+// FreeDNS). Off by default — this stays a Cloudflare-first tool.
+// ENABLE_NON_CLOUDFLARE_DDNS is kept as a deprecated alias for back-compat.
+export const DDNS_ENABLED =
+  truthy(process.env.ENABLE_OTHER_DDNS) || truthy(process.env.ENABLE_NON_CLOUDFLARE_DDNS);
 
 export const features = {
   ddns: DDNS_ENABLED,

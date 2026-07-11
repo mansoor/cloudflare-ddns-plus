@@ -41,7 +41,7 @@ docker run -d \
   -p 8080:8080 \
   -e ADMIN_USERNAME=admin \
   -e ADMIN_PASSWORD=change-me \
-  -e ENABLE_NON_CLOUDFLARE_DDNS=false \
+  -e ENABLE_OTHER_DDNS=false \
   -v "$PWD/data:/data" \
   --restart unless-stopped \
   ghcr.io/mansoor/cloudflare-ddns-ui:latest
@@ -63,7 +63,7 @@ services:
       ADMIN_USERNAME: admin
       ADMIN_PASSWORD: change-me                # leave blank to get a random one in the logs
       SESSION_SECRET: ""                       # leave blank to auto-generate (persisted in ./data)
-      ENABLE_NON_CLOUDFLARE_DDNS: "false"      # set "true" for the DuckDNS / DynDNS2 tab
+      ENABLE_OTHER_DDNS: "false"               # set "true" for the DuckDNS / FreeDNS / DynDNS2 tab
     volumes:
       - ./data:/data
 ```
@@ -90,7 +90,7 @@ problem? See [Troubleshooting](#troubleshooting).
 | `ADMIN_PASSWORD` | *(random)*| Admin password. If unset, a random one is generated and logged once on boot |
 | `SESSION_SECRET` | *(random)*| Cookie-signing secret. If unset, one is generated and saved to `data/.session-secret` |
 | `DATA_DIR`       | `/data`   | Where `config.json` and secrets are stored (container default `/data`) |
-| `ENABLE_NON_CLOUDFLARE_DDNS` | *(off)* | Set truthy to enable the optional **Other DDNS** tab (DuckDNS / DynDNS2) |
+| `ENABLE_OTHER_DDNS` | *(off)* | Set truthy to enable the optional **Other DDNS** tab (DuckDNS / FreeDNS / DynDNS2). Alias: `ENABLE_NON_CLOUDFLARE_DDNS` |
 
 All DNS configuration lives in the UI (persisted to `data/config.json`).
 
@@ -138,7 +138,7 @@ This is a Cloudflare-first tool, but if you also have a one-off dynamic host on 
 routers), you can keep it updated here too — no need for a second tool. It rides on the same schedule,
 IP detection, activity log, and notifications.
 
-Enable it by setting `ENABLE_NON_CLOUDFLARE_DDNS=true`; a **DDNS** tab appears. Then **Add provider**:
+Enable it by setting `ENABLE_OTHER_DDNS=true`; a **DDNS** tab appears. Then **Add provider**:
 
 | Provider | What you provide |
 |---|---|
@@ -162,7 +162,7 @@ providers are never contacted — your Cloudflare setup is completely unaffected
 
 - **Pre-1.0 (0.x):** still stabilizing — expect occasional changes until `v1.0.0`.
 - Manages **A / AAAA** records and account **IP Lists**. Load balancers are still out of scope.
-- Non-Cloudflare DDNS (**DuckDNS / DynDNS2**) is **opt-in** via `ENABLE_NON_CLOUDFLARE_DDNS`, and stays
+- Non-Cloudflare DDNS (**DuckDNS / FreeDNS / DynDNS2**) is **opt-in** via `ENABLE_OTHER_DDNS`, and stays
   hidden/inactive when off — the Cloudflare path is unaffected either way.
 - Notifications cover Discord, Slack, and generic webhook/ntfy (the webhook channel also covers
   Gotify / Home Assistant / custom endpoints). Telegram/Pushover aren't built in.

@@ -13,7 +13,7 @@ services:
       # then set it here (or in a .env file) for subsequent runs.
       ADMIN_PASSWORD: ${ADMIN_PASSWORD:-}
       SESSION_SECRET: ${SESSION_SECRET:-}
-      # Set to true to enable the optional "Other DDNS" tab (DuckDNS / DynDNS2).
-      ENABLE_NON_CLOUDFLARE_DDNS: ${ENABLE_NON_CLOUDFLARE_DDNS:-false}
+      # Set to true to enable the optional "Other DDNS" tab (DuckDNS / FreeDNS / DynDNS2).
+      ENABLE_OTHER_DDNS: ${ENABLE_OTHER_DDNS:-false}
     volumes:
       - ./data:/data
