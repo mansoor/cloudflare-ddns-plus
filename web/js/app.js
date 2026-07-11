@@ -64,7 +64,7 @@ function initTabs() {
       b.classList.toggle('border-transparent', !on);
       b.classList.toggle('text-slate-500', !on);
     });
-    ['dashboard', 'zones', 'waf', 'settings'].forEach((t) => {
+    ['dashboard', 'zones', 'waf', 'ddns', 'settings'].forEach((t) => {
       const sec = document.getElementById(`tab-${t}`);
       if (sec) sec.classList.toggle('hidden', t !== name);
     });
@@ -74,8 +74,15 @@ function initTabs() {
 }
 
 // ---------- settings rendering ----------
-let META = { ip4_providers: [], ip6_providers: [] };
+let META = { ip4_providers: [], ip6_providers: [], features: {} };
 let PAUSED = false; // last-known scheduler paused state (from /api/status)
+
+// Show/hide feature-gated UI (the DDNS tab) based on server flags.
+function applyFeatures() {
+  const on = Boolean(META.features && META.features.ddns);
+  const btn = $('#tab-btn-ddns');
+  if (btn) btn.classList.toggle('hidden', !on);
+}
 
 function fillProviderSelect(sel, providers, value) {
   sel.innerHTML = '';
@@ -257,6 +264,7 @@ function renderConfig(cfg) {
 
   renderWaf(cfg.waf_lists || []);
   renderNotifications(cfg.notifications || { events: {}, channels: [] });
+  renderDdns(cfg.ddns_providers || []);
 }
 
 // Re-render WAF cards, preserving which were expanded (by id / list name).
@@ -336,12 +344,14 @@ function collectConfig() {
     ip6_custom_url: $('#ip6-custom').value.trim(),
     waf_lists: collectWaf(),
     notifications: collectNotifications(),
+    ddns_providers: collectDdns(),
   };
 }
 
 async function loadConfig() {
   const { config, meta } = await api('/api/config');
   META = meta;
+  applyFeatures();
   renderConfig(config);
 }
 
@@ -733,6 +743,205 @@ function collectNotifications() {
   };
 }
 
+// ---------- DDNS providers (opt-in) ----------
+function updateDdnsEmpty() {
+  const empty = $('#ddns-empty');
+  if (empty) empty.classList.toggle('hidden', $$('#ddns-list .ddns-card').length > 0);
+}
+
+function toggleDdnsFields(node) {
+  const type = $('.ddns-type', node).value;
+  $$('.ddns-f-duckdns', node).forEach((el) => el.classList.toggle('hidden', type !== 'duckdns'));
+  $$('.ddns-f-dyndns2', node).forEach((el) => el.classList.toggle('hidden', type !== 'dyndns2'));
+}
+
+function updateDdnsSummary(node) {
+  const type = $('.ddns-type', node).value;
+  const host = type === 'dyndns2' ? $('.ddns-hostname', node).value.trim() : $('.ddns-domains', node).value.trim();
+  const label = $('.ddns-label', node).value.trim();
+  const enabled = $('.ddns-enabled', node).checked;
+  const typeName = type === 'dyndns2' ? 'DynDNS2' : 'DuckDNS';
+  $('.ddns-summary-title', node).textContent = label || host || 'New provider';
+  $('.ddns-summary-meta', node).textContent = `${typeName} · ${host || 'not configured'}`;
+  const badge = $('.ddns-summary-badge', node);
+  badge.textContent = enabled ? 'enabled' : 'disabled';
+  badge.className =
+    'ddns-summary-badge badge ' +
+    (enabled
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300');
+}
+
+function makeDdnsRow(p = {}, { expanded = false } = {}) {
+  const node = $('#ddns-template').content.firstElementChild.cloneNode(true);
+  node.dataset.id = p.id || '';
+  $('.ddns-type', node).value = p.type || 'duckdns';
+  $('.ddns-label', node).value = p.label || '';
+  $('.ddns-enabled', node).checked = p.enabled !== false;
+  $('.ddns-domains', node).value = p.domains || '';
+  $('.ddns-server', node).value = p.server || '';
+  $('.ddns-hostname', node).value = p.hostname || '';
+  $('.ddns-username', node).value = p.username || '';
+  $('.ddns-https', node).checked = p.https !== false;
+
+  const tokenInput = $('.ddns-token', node);
+  if (p.token_hint) {
+    tokenInput.placeholder = `•••• stored (…${p.token_hint}) — leave blank to keep`;
+    node.dataset.hasToken = '1';
+  }
+  const pwInput = $('.ddns-password', node);
+  if (p.password_set) {
+    pwInput.placeholder = '•••• stored — leave blank to keep';
+    node.dataset.hasPassword = '1';
+  }
+
+  $('.ddns-type', node).addEventListener('change', () => {
+    toggleDdnsFields(node);
+    updateDdnsSummary(node);
+  });
+  ['.ddns-label', '.ddns-domains', '.ddns-hostname'].forEach((sel) =>
+    $(sel, node).addEventListener('input', () => updateDdnsSummary(node))
+  );
+  $('.ddns-enabled', node).addEventListener('change', () => updateDdnsSummary(node));
+  $('.ddns-save', node).addEventListener('click', () => saveDdns(node));
+  $('.ddns-delete', node).addEventListener('click', () => deleteDdns(node));
+  $('.ddns-test', node).addEventListener('click', () => testDdns(node));
+  $('.ddns-update', node).addEventListener('click', (e) => {
+    e.stopPropagation();
+    updateDdns(node);
+  });
+  $('.acc-header', node).addEventListener('click', () => {
+    setCollapsed(node, !$('.acc-body', node).classList.contains('hidden'));
+  });
+
+  toggleDdnsFields(node);
+  setCollapsed(node, !expanded);
+  updateDdnsSummary(node);
+  return node;
+}
+
+// Build one provider object from a card (secrets: placeholder if stored+blank).
+function collectOneDdns(node) {
+  const tokenVal = $('.ddns-token', node).value.trim();
+  const pwVal = $('.ddns-password', node).value.trim();
+  return {
+    id: node.dataset.id || undefined,
+    type: $('.ddns-type', node).value,
+    enabled: $('.ddns-enabled', node).checked,
+    label: $('.ddns-label', node).value.trim(),
+    domains: $('.ddns-domains', node).value.trim(),
+    token: tokenVal || (node.dataset.hasToken ? REDACTED : ''),
+    server: $('.ddns-server', node).value.trim(),
+    hostname: $('.ddns-hostname', node).value.trim(),
+    username: $('.ddns-username', node).value.trim(),
+    password: pwVal || (node.dataset.hasPassword ? REDACTED : ''),
+    https: $('.ddns-https', node).checked,
+  };
+}
+
+function collectDdns() {
+  return $$('#ddns-list .ddns-card').map(collectOneDdns);
+}
+
+function ddnsMissingField(node) {
+  const type = $('.ddns-type', node).value;
+  if (type === 'duckdns') {
+    if (!$('.ddns-domains', node).value.trim()) return 'Enter the DuckDNS domain(s).';
+  } else {
+    if (!$('.ddns-server', node).value.trim()) return 'Enter the DynDNS2 server host.';
+    if (!$('.ddns-hostname', node).value.trim()) return 'Enter the hostname.';
+    if (!$('.ddns-username', node).value.trim()) return 'Enter the username.';
+  }
+  return null;
+}
+
+async function saveDdns(node) {
+  const msg = $('#ddns-msg');
+  const missing = ddnsMissingField(node);
+  if (missing) {
+    setMsg(msg, `✕ ${missing}`, 'err');
+    setTimeout(() => setMsg(msg, '', 'info'), 5000);
+    return;
+  }
+  await saveConfig({ btn: $('.ddns-save', node), msg, verb: 'Saved provider' });
+}
+
+async function deleteDdns(node) {
+  const title = ($('.ddns-summary-title', node).textContent || 'this provider').trim();
+  const ok = await confirmDialog({
+    title: 'Delete provider',
+    message: `Delete "${title}"? It will stop being updated.`,
+    confirmLabel: 'Delete provider',
+  });
+  if (!ok) return;
+  node.remove();
+  updateDdnsEmpty();
+  await saveConfig({ btn: null, msg: $('#ddns-msg'), verb: 'Provider deleted' });
+}
+
+async function testDdns(node) {
+  const msg = $('.ddns-verify-msg', node);
+  const missing = ddnsMissingField(node);
+  if (missing) {
+    msg.textContent = `✕ ${missing}`;
+    msg.className = 'ddns-verify-msg sm:col-span-2 text-xs text-red-600 dark:text-red-400';
+    return;
+  }
+  msg.textContent = 'Testing…';
+  msg.className = 'ddns-verify-msg sm:col-span-2 text-xs text-slate-500';
+  try {
+    const res = await api('/api/ddns/verify', {
+      method: 'POST',
+      body: JSON.stringify({ provider: collectOneDdns(node) }),
+    });
+    msg.textContent = `✓ ${res.detail || 'Provider responded OK'}`;
+    msg.className = 'ddns-verify-msg sm:col-span-2 text-xs text-green-600 dark:text-green-400';
+  } catch (err) {
+    msg.textContent = `✕ ${err.message}`;
+    msg.className = 'ddns-verify-msg sm:col-span-2 text-xs text-red-600 dark:text-red-400';
+  }
+}
+
+async function updateDdns(node) {
+  const msg = $('#ddns-msg');
+  const id = node.dataset.id;
+  if (!id) {
+    setMsg(msg, '✕ Save the provider before updating it.', 'err');
+    setTimeout(() => setMsg(msg, '', 'info'), 5000);
+    return;
+  }
+  const btn = $('.ddns-update', node);
+  const original = btn.textContent;
+  btn.textContent = 'updating…';
+  setMsg(msg, 'Updating provider…', 'info');
+  try {
+    const res = await api(`/api/ddns/${id}/update`, { method: 'POST' });
+    const ok = res.result === 'ok';
+    setMsg(msg, `${ok ? '✓' : '⚠'} ${res.message}`, ok ? 'ok' : 'err');
+  } catch (err) {
+    setMsg(msg, `✕ ${err.message}`, 'err');
+  } finally {
+    btn.textContent = original;
+    refreshStatus();
+    setTimeout(() => setMsg(msg, '', 'info'), 6000);
+  }
+}
+
+// Re-render DDNS cards, preserving which were expanded (by id).
+function renderDdns(providers) {
+  const wrap = $('#ddns-list');
+  if (!wrap) return;
+  const expIds = new Set(
+    $$('#ddns-list .ddns-card')
+      .filter((n) => !$('.acc-body', n).classList.contains('hidden'))
+      .map((n) => n.dataset.id)
+      .filter(Boolean)
+  );
+  wrap.innerHTML = '';
+  (providers || []).forEach((p) => wrap.appendChild(makeDdnsRow(p, { expanded: expIds.has(p.id) })));
+  updateDdnsEmpty();
+}
+
 // ---------- dashboard ----------
 function renderStatus(s) {
   $('#stat-ipv4').textContent = s.currentIPv4 || '—';
@@ -969,6 +1178,10 @@ async function init() {
   $('#add-channel').addEventListener('click', () => {
     $('#channels').appendChild(makeChannelRow({}, { expanded: true }));
     updateChannelsEmpty();
+  });
+  $('#add-ddns').addEventListener('click', () => {
+    $('#ddns-list').appendChild(makeDdnsRow({}, { expanded: true }));
+    updateDdnsEmpty();
   });
   $('#update-now').addEventListener('click', updateNow);
   $('#pause-toggle').addEventListener('click', togglePause);

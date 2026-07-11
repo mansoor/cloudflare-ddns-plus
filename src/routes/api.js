@@ -11,6 +11,8 @@ import { getState } from '../state.js';
 import { applySchedule, setPaused, triggerNow } from '../scheduler.js';
 import { REDACTED_TOKEN } from '../config.js';
 import { sendNotification } from '../notify.js';
+import { updateDdnsProvider } from '../ddns.js';
+import { features } from '../features.js';
 
 export default async function apiRoutes(app) {
   // --- Auth ---
@@ -42,7 +44,7 @@ export default async function apiRoutes(app) {
     const cfg = await loadConfig();
     return {
       config: redactConfig(cfg),
-      meta: { ip4_providers: IP_PROVIDERS_V4, ip6_providers: IP_PROVIDERS_V6 },
+      meta: { ip4_providers: IP_PROVIDERS_V4, ip6_providers: IP_PROVIDERS_V6, features },
     };
   });
 
@@ -130,6 +132,36 @@ export default async function apiRoutes(app) {
       ipv6: getState().currentIPv6,
     });
     return res.ok ? { ok: true } : reply.code(400).send({ error: res.error });
+  });
+
+  // --- Non-Cloudflare DDNS (opt-in) ---
+  // Test a provider by performing an update with the current detected IPs.
+  app.post('/api/ddns/verify', auth, async (req, reply) => {
+    if (!features.ddns) return reply.code(404).send({ error: 'DDNS providers are disabled' });
+    const incoming = req.body?.provider || {};
+    const cfg = await loadConfig();
+    const stored = cfg.ddns_providers.find((p) => p.id === incoming.id);
+    // Restore any redacted secrets from the stored provider.
+    const provider = {
+      ...incoming,
+      token: !incoming.token || incoming.token === REDACTED_TOKEN ? stored?.token || '' : incoming.token,
+      password:
+        !incoming.password || incoming.password === REDACTED_TOKEN
+          ? stored?.password || ''
+          : incoming.password,
+    };
+    const st = getState();
+    const res = await updateDdnsProvider(provider, {
+      ipv4: st.currentIPv4 || null,
+      ipv6: st.currentIPv6 || null,
+    });
+    return res.ok ? { ok: true, status: res.status, detail: res.detail } : reply.code(400).send({ error: res.detail });
+  });
+
+  // Sync a single DDNS provider now.
+  app.post('/api/ddns/:id/update', auth, async (req, reply) => {
+    if (!features.ddns) return reply.code(404).send({ error: 'DDNS providers are disabled' });
+    return triggerNow({ ddnsId: req.params.id });
   });
 
   // --- Pause / resume the scheduler ---

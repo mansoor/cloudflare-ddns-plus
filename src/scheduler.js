@@ -80,9 +80,16 @@ export function stopScheduler() {
 }
 
 // Manual trigger from the API — runs immediately with the latest config.
-// Pass { accountId } to sync one zone, or { wafId } to sync one WAF list.
-export async function triggerNow({ accountId = null, wafId = null } = {}) {
+// Pass { accountId } for one zone, { wafId } for one WAF list, or { ddnsId } for
+// one DDNS provider.
+export async function triggerNow({ accountId = null, wafId = null, ddnsId = null } = {}) {
   const cfg = await loadConfig();
-  const trigger = accountId ? 'manual-zone' : wafId ? 'manual-waf' : 'manual';
-  return runUpdate(cfg, { trigger, accountId, wafId });
+  const trigger = accountId
+    ? 'manual-zone'
+    : wafId
+    ? 'manual-waf'
+    : ddnsId
+    ? 'manual-ddns'
+    : 'manual';
+  return runUpdate(cfg, { trigger, accountId, wafId, ddnsId });
 }
