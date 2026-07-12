@@ -1480,14 +1480,16 @@ function applyTheme(pref) {
   } catch (e) {}
   const dark = pref === 'dark' || (pref === 'system' && prefersDark.matches);
   document.documentElement.classList.toggle('dark', dark);
-  // Reflect the active choice in the segmented control.
-  $$('#theme-toggle .theme-btn').forEach((b) => {
+  // Collapsed control: show only the active theme's icon.
+  $$('#theme-current [data-theme-icon]').forEach((el) =>
+    el.classList.toggle('hidden', el.dataset.themeIcon !== pref)
+  );
+  // Highlight the active option in the dropdown.
+  $$('#theme-menu .theme-opt').forEach((b) => {
     const on = b.dataset.theme === pref;
-    b.classList.toggle('bg-white', on);
-    b.classList.toggle('text-slate-900', on);
-    b.classList.toggle('shadow-sm', on);
-    b.classList.toggle('dark:bg-slate-700', on);
-    b.classList.toggle('dark:text-white', on);
+    b.classList.toggle('bg-slate-100', on);
+    b.classList.toggle('dark:bg-slate-700/50', on);
+    b.classList.toggle('font-medium', on);
   });
 }
 
@@ -1497,9 +1499,27 @@ function initTheme() {
     pref = localStorage.getItem('theme') || 'system';
   } catch (e) {}
   applyTheme(pref);
-  $$('#theme-toggle .theme-btn').forEach((b) =>
-    b.addEventListener('click', () => applyTheme(b.dataset.theme))
-  );
+
+  // The active icon toggles a small dropdown with the other choices.
+  const menu = $('#theme-menu');
+  const current = $('#theme-current');
+  if (current && menu) {
+    current.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menu.classList.toggle('hidden') === false;
+      current.setAttribute('aria-expanded', String(open));
+    });
+    menu.addEventListener('click', (e) => e.stopPropagation());
+    $$('#theme-menu .theme-opt').forEach((b) =>
+      b.addEventListener('click', () => {
+        applyTheme(b.dataset.theme);
+        menu.classList.add('hidden');
+        current.setAttribute('aria-expanded', 'false');
+      })
+    );
+    document.addEventListener('click', () => menu.classList.add('hidden'));
+  }
+
   // Follow the OS when on "system".
   prefersDark.addEventListener('change', () => {
     let cur = 'system';
