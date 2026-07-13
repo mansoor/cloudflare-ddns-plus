@@ -32,7 +32,7 @@ It detects your public IPv4/IPv6 on a schedule and creates or updates the matchi
 - 🎚️ **Per-subdomain record types** — global A/AAAA master switches, narrowed per host (e.g. one subdomain dual-stack, another IPv4-only)
 - 🛡️ **WAF / IP Lists** — keep a Cloudflare account-level IP List updated with your current IP, to reference in firewall rules
 - 🦆 **Other DDNS providers** *(opt-in)* — DuckDNS, FreeDNS, & generic DynDNS2 (No-IP, Dynu, Namecheap, deSEC, DNS-O-Matic, …) behind a flag
-- 🔔 **Notifications** — Discord, Slack, or a generic webhook/ntfy, on update failures, IP changes, and/or successful record changes (each toggleable)
+- 🔔 **Notifications** — Discord, Slack, or a generic webhook/ntfy, with **per-channel** event selection (update failures, IP changes, and/or successful record changes)
 - 💓 **Heartbeat monitoring** — ping **Healthchecks.io**, **Uptime Kuma**, **Better Stack**, or a **custom URL** (`{status}`/`{message}` placeholders) after each run so you're alerted if the updater ever stops
 - 🎨 **Light / Dark / System** theme
 - ✅ **Idempotent** — only touches records that actually changed
@@ -134,8 +134,9 @@ entries you added manually are left alone.
 
 ## Notifications
 
-Add channels under **Settings → Notifications** and choose which events fire (each is toggleable):
-**update failures**, **IP address change**, **successful record changes**.
+Add channels under **Settings → Notifications**. **Each channel picks which events it wants** —
+**update failures**, **IP address change**, and/or **successful record changes** — so you can, say, send
+failures to one channel and IP changes to another.
 
 | Channel | What you provide |
 |---|---|

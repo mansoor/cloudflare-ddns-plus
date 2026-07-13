@@ -35,7 +35,8 @@ export function defaultConfig() {
     scheduler_paused: false,
     waf_lists: [],
     notifications: {
-      events: { failure: true, ip_change: true, success: false },
+      // Event preferences live per-channel now (each channel picks failure /
+      // ip_change / success). No global events block.
       channels: [],
     },
     heartbeats: [], // uptime monitors pinged after each full run
@@ -183,18 +184,28 @@ function normalizeWaf(w) {
 }
 
 function normalizeNotifications(n) {
-  const events = n?.events || {};
+  // Event prefs used to be a single global block; they're per-channel now.
+  // Migrate an old global `events` object onto any channel that predates the
+  // per-channel prefs so existing setups keep behaving the same.
+  const g = n?.events || {};
+  const legacy = {
+    failure: g.failure !== false, // old default on
+    ip_change: g.ip_change !== false, // old default on
+    success: Boolean(g.success), // old default off
+  };
   return {
-    events: {
-      failure: events.failure !== false, // default on
-      ip_change: events.ip_change !== false, // default on
-      success: Boolean(events.success), // default off
-    },
-    channels: Array.isArray(n?.channels) ? n.channels.map(normalizeChannel) : [],
+    channels: Array.isArray(n?.channels) ? n.channels.map((c) => normalizeChannel(c, legacy)) : [],
   };
 }
 
-function normalizeChannel(c) {
+const DEFAULT_CHANNEL_EVENTS = { failure: true, ip_change: true, success: false };
+
+function normalizeChannel(c, eventsFallback = DEFAULT_CHANNEL_EVENTS) {
+  const e = c?.events;
+  const events =
+    e && typeof e === 'object'
+      ? { failure: e.failure !== false, ip_change: e.ip_change !== false, success: Boolean(e.success) }
+      : { ...eventsFallback }; // legacy channel with no prefs → inherit old global
   return {
     id: c?.id || randomUUID(),
     type: CHANNEL_TYPES.includes(c?.type) ? c.type : 'webhook',
@@ -204,6 +215,7 @@ function normalizeChannel(c) {
     url: String(c?.url || ''),
     format: WEBHOOK_FORMATS.includes(c?.format) ? c.format : 'json',
     auth_header: String(c?.auth_header || ''),
+    events,
   };
 }
 
