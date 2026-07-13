@@ -639,27 +639,62 @@
       </div>
     </template>
 
-    <!-- Heartbeat monitor row template -->
+    <!-- Heartbeat monitor card template (collapsible) -->
     <template id="heartbeat-template">
-      <div class="heartbeat space-y-2 rounded-lg border border-slate-200 p-3 dark:border-slate-700" data-id="">
-        <div class="flex flex-col gap-2 sm:flex-row sm:items-center">
-          <select class="input hb-type sm:w-44">
-            <option value="healthchecks">Healthchecks.io</option>
-            <option value="uptimekuma">Uptime Kuma</option>
-            <option value="betterstack">Better Stack</option>
-            <option value="custom">Custom URL</option>
-          </select>
-          <input class="input hb-label sm:w-40" placeholder="Label (optional)" />
-          <input class="input hb-url min-w-0 flex-1" type="password" placeholder="Ping / push URL" autocomplete="off" />
-          <label class="flex shrink-0 items-center gap-1 whitespace-nowrap text-xs text-slate-500">
-            <input type="checkbox" class="hb-enabled h-4 w-4 rounded border-slate-300" /> On
-          </label>
-          <div class="flex shrink-0 gap-2">
-            <button type="button" class="btn-secondary hb-test text-xs">Test</button>
-            <button type="button" class="btn-ghost hb-remove text-sm text-red-600">✕</button>
+      <div class="heartbeat-card mb-3 overflow-hidden rounded-lg border border-slate-200 dark:border-slate-700" data-id="">
+        <div class="acc-header flex cursor-pointer select-none flex-wrap items-center gap-x-3 gap-y-1.5 px-3 py-2.5 hover:bg-slate-50 dark:hover:bg-slate-700/40">
+          <div class="flex min-w-0 flex-1 items-center gap-2.5">
+            <svg class="acc-chevron h-4 w-4 shrink-0 text-slate-400 transition-transform" viewBox="0 0 20 20" fill="currentColor" aria-hidden="true">
+              <path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd" />
+            </svg>
+            <div class="min-w-0">
+              <p class="hb-summary-title truncate text-sm font-medium">New monitor</p>
+              <p class="hb-summary-meta truncate text-xs text-slate-500">Healthchecks.io</p>
+            </div>
+          </div>
+          <div class="flex w-full flex-wrap items-center gap-2 sm:w-auto sm:flex-nowrap">
+            <span class="hb-summary-badge badge bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300">disabled</span>
           </div>
         </div>
-        <p class="hb-msg text-xs"></p>
+        <div class="acc-body hidden border-t border-slate-200 p-3 dark:border-slate-700">
+          <div class="grid gap-3 sm:grid-cols-2">
+            <div>
+              <label class="label">Type</label>
+              <select class="input hb-type">
+                <option value="healthchecks">Healthchecks.io</option>
+                <option value="uptimekuma">Uptime Kuma</option>
+                <option value="betterstack">Better Stack</option>
+                <option value="custom">Custom URL</option>
+              </select>
+            </div>
+            <div>
+              <label class="label">Label</label>
+              <input class="input hb-label" placeholder="e.g. main check" />
+            </div>
+            <label class="sm:col-span-2 flex items-center gap-2 text-sm">
+              <input type="checkbox" class="hb-enabled h-4 w-4 rounded border-slate-300" /> Enabled
+            </label>
+            <div class="sm:col-span-2">
+              <label class="label">Ping / push URL</label>
+              <div class="flex items-center gap-2">
+                <input class="input hb-url min-w-0 flex-1" type="text" placeholder="https://hc-ping.com/…" autocomplete="off" />
+                <button type="button" class="btn-ghost hidden p-1 text-slate-500 hb-url-reveal" title="Show URL" aria-label="Show URL">
+                  <svg class="hb-eye h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg class="hb-eye-off hidden h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9.9 4.24A9.12 9.12 0 0 1 12 4c6.5 0 10 8 10 8a18.5 18.5 0 0 1-2.16 3.19M6.61 6.61A18.5 18.5 0 0 0 2 12s3.5 7 10 7a9.12 9.12 0 0 0 5.39-1.61"/><path d="M14.12 14.12a3 3 0 1 1-4.24-4.24"/><path d="m2 2 20 20"/></svg>
+                </button>
+              </div>
+              <p class="hb-url-hint mt-1 hidden text-xs text-slate-500"></p>
+            </div>
+          </div>
+          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm hb-delete">Delete</button>
+            <div class="flex items-center gap-2">
+              <span class="hb-msg text-xs"></span>
+              <button type="button" class="btn-secondary text-sm hb-test">Test</button>
+              <button type="button" class="btn-primary text-sm hb-save">Save monitor</button>
+            </div>
+          </div>
+        </div>
       </div>
     </template>
 

@@ -280,11 +280,8 @@ export function redactConfig(cfg) {
         auth_header_set: Boolean(c.auth_header),
       })),
     },
-    heartbeats: cfg.heartbeats.map((h) => ({
-      ...h,
-      url: h.url ? REDACTED_TOKEN : '',
-      url_hint: hint(h.url),
-    })),
+    // Heartbeat URLs are sent as-is (masked in the UI with a reveal toggle,
+    // like the FreeDNS update URLs) so a saved monitor can be revealed + tested.
     ddns_providers: cfg.ddns_providers.map((p) => ({
       ...p,
       token: p.token ? REDACTED_TOKEN : '',
@@ -329,12 +326,6 @@ export function mergeIncomingConfig(existing, incoming) {
       auth_header: restore(c.auth_header, prev?.auth_header),
     };
   });
-
-  const hbById = new Map(existing.heartbeats.map((h) => [h.id, h]));
-  merged.heartbeats = merged.heartbeats.map((h) => ({
-    ...h,
-    url: restore(h.url, hbById.get(h.id)?.url),
-  }));
 
   const ddnsById = new Map(existing.ddns_providers.map((p) => [p.id, p]));
   merged.ddns_providers = merged.ddns_providers.map((p) => {
