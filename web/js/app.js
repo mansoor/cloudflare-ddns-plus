@@ -984,47 +984,123 @@ function collectNotifications() {
 }
 
 // ---------- heartbeat monitors ----------
+const HB_TYPE_LABELS = {
+  healthchecks: 'Healthchecks.io',
+  uptimekuma: 'Uptime Kuma',
+  betterstack: 'Better Stack',
+  custom: 'Custom URL',
+};
+
 function updateHeartbeatsEmpty() {
-  $('#heartbeats-empty').classList.toggle('hidden', $$('#heartbeats .heartbeat').length > 0);
+  $('#heartbeats-empty').classList.toggle('hidden', $$('#heartbeats .heartbeat-card').length > 0);
 }
 
-function makeHeartbeatRow(hb = {}) {
+function updateHeartbeatSummary(node) {
+  const type = $('.hb-type', node).value;
+  const label = $('.hb-label', node).value.trim();
+  const enabled = $('.hb-enabled', node).checked;
+  const typeName = HB_TYPE_LABELS[type] || type;
+  $('.hb-summary-title', node).textContent = label || `${typeName} monitor`;
+  $('.hb-summary-meta', node).textContent = typeName;
+  const badge = $('.hb-summary-badge', node);
+  badge.textContent = enabled ? 'enabled' : 'disabled';
+  badge.className =
+    'hb-summary-badge badge ' +
+    (enabled
+      ? 'bg-green-100 text-green-700 dark:bg-green-900/50 dark:text-green-300'
+      : 'bg-slate-100 text-slate-600 dark:bg-slate-700 dark:text-slate-300');
+}
+
+// The {status}/{message} hint only applies to the custom type.
+function toggleHeartbeatHint(node) {
+  const hint = $('.hb-url-hint', node);
+  const isCustom = $('.hb-type', node).value === 'custom';
+  hint.textContent = isCustom
+    ? 'Include {status} (up/down) and/or {message}; without {status} it pings only on success.'
+    : '';
+  hint.classList.toggle('hidden', !isCustom);
+}
+
+function makeHeartbeatRow(hb = {}, { expanded = false } = {}) {
   const node = $('#heartbeat-template').content.firstElementChild.cloneNode(true);
   node.dataset.id = hb.id || '';
   $('.hb-type', node).value = hb.type || 'healthchecks';
   $('.hb-label', node).value = hb.label || '';
   $('.hb-enabled', node).checked = hb.enabled !== false;
+
+  // URL stays plain while unsaved; a saved URL loads masked with an eye toggle.
   const urlInput = $('.hb-url', node);
-  if (hb.url_hint) {
-    urlInput.placeholder = `•••• stored (…${hb.url_hint}) — leave blank to keep`;
-    node.dataset.hasUrl = '1';
+  urlInput.value = hb.url || '';
+  const reveal = $('.hb-url-reveal', node);
+  if (hb.url) {
+    urlInput.type = 'password';
+    reveal.classList.remove('hidden');
+    reveal.addEventListener('click', () => {
+      const hidden = urlInput.type === 'password';
+      urlInput.type = hidden ? 'text' : 'password';
+      $('.hb-eye', reveal).classList.toggle('hidden', hidden);
+      $('.hb-eye-off', reveal).classList.toggle('hidden', !hidden);
+      reveal.title = hidden ? 'Hide URL' : 'Show URL';
+    });
   }
-  $('.hb-remove', node).addEventListener('click', () => {
-    node.remove();
-    updateHeartbeatsEmpty();
+
+  $('.hb-type', node).addEventListener('change', () => {
+    updateHeartbeatSummary(node);
+    toggleHeartbeatHint(node);
   });
+  $('.hb-label', node).addEventListener('input', () => updateHeartbeatSummary(node));
+  $('.hb-enabled', node).addEventListener('change', () => updateHeartbeatSummary(node));
+  $('.hb-save', node).addEventListener('click', () => saveHeartbeat(node));
+  $('.hb-delete', node).addEventListener('click', () => deleteHeartbeat(node));
   $('.hb-test', node).addEventListener('click', () => testHeartbeat(node));
+  $('.acc-header', node).addEventListener('click', () => {
+    setCollapsed(node, !$('.acc-body', node).classList.contains('hidden'));
+  });
+
+  toggleHeartbeatHint(node);
+  setCollapsed(node, !expanded);
+  updateHeartbeatSummary(node);
   return node;
 }
 
 function renderHeartbeats(list) {
   const wrap = $('#heartbeats');
+  const expIds = new Set(
+    $$('#heartbeats .heartbeat-card')
+      .filter((c) => !$('.acc-body', c).classList.contains('hidden'))
+      .map((c) => c.dataset.id)
+      .filter(Boolean)
+  );
   wrap.innerHTML = '';
-  (list || []).forEach((hb) => wrap.appendChild(makeHeartbeatRow(hb)));
+  (list || []).forEach((hb) => wrap.appendChild(makeHeartbeatRow(hb, { expanded: expIds.has(hb.id) })));
   updateHeartbeatsEmpty();
 }
 
 function collectHeartbeats() {
-  return $$('#heartbeats .heartbeat').map((node) => {
-    const urlVal = $('.hb-url', node).value.trim();
-    return {
-      id: node.dataset.id || undefined,
-      type: $('.hb-type', node).value,
-      enabled: $('.hb-enabled', node).checked,
-      label: $('.hb-label', node).value.trim(),
-      url: urlVal || (node.dataset.hasUrl ? REDACTED : ''),
-    };
+  return $$('#heartbeats .heartbeat-card').map((node) => ({
+    id: node.dataset.id || undefined,
+    type: $('.hb-type', node).value,
+    enabled: $('.hb-enabled', node).checked,
+    label: $('.hb-label', node).value.trim(),
+    url: $('.hb-url', node).value.trim(),
+  }));
+}
+
+async function saveHeartbeat(node) {
+  await saveConfig({ btn: $('.hb-save', node), msg: $('#save-msg'), verb: 'Saved monitor' });
+}
+
+async function deleteHeartbeat(node) {
+  const title = ($('.hb-summary-title', node).textContent || 'this monitor').trim();
+  const ok = await confirmDialog({
+    title: 'Delete monitor',
+    message: `Delete "${title}"? Heartbeats will no longer be sent to it.`,
+    confirmLabel: 'Delete monitor',
   });
+  if (!ok) return;
+  node.remove();
+  updateHeartbeatsEmpty();
+  await saveConfig({ btn: null, msg: $('#save-msg'), verb: 'Monitor deleted' });
 }
 
 async function testHeartbeat(node) {
@@ -1034,7 +1110,7 @@ async function testHeartbeat(node) {
     msg.className = `hb-msg text-xs ${cls}`;
   };
   if (!node.dataset.id) {
-    set('Save settings first, then test.', 'text-red-600 dark:text-red-400');
+    set('Save the monitor first, then test.', 'text-red-600 dark:text-red-400');
     setTimeout(() => set('', ''), 5000);
     return;
   }
@@ -1714,7 +1790,7 @@ async function init() {
     updateChannelsEmpty();
   });
   $('#add-heartbeat').addEventListener('click', () => {
-    $('#heartbeats').appendChild(makeHeartbeatRow({ enabled: true }));
+    $('#heartbeats').appendChild(makeHeartbeatRow({ enabled: true }, { expanded: true }));
     updateHeartbeatsEmpty();
   });
   $('#add-ddns').addEventListener('click', () => {
