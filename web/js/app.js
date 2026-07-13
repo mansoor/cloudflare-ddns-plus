@@ -374,7 +374,7 @@ function renderConfig(cfg) {
 
   renderLogSettings(cfg.log || {});
   renderWaf(cfg.waf_lists || []);
-  renderNotifications(cfg.notifications || { events: {}, channels: [] });
+  renderNotifications(cfg.notifications || { channels: [] });
   renderHeartbeats(cfg.heartbeats || []);
   renderDdns(cfg.ddns_providers || []);
   updateOnboarding(cfg);
@@ -628,12 +628,8 @@ function renderWaf(wafLists) {
   updateWafEmpty();
 }
 
-// Re-render notification event toggles + channel cards (preserve expanded).
+// Re-render channel cards (preserve expanded). Event prefs live per-channel.
 function renderNotifications(n) {
-  $('#notif-failure').checked = n.events?.failure !== false;
-  $('#notif-ipchange').checked = n.events?.ip_change !== false;
-  $('#notif-success').checked = Boolean(n.events?.success);
-
   const wrap = $('#channels');
   const expIds = new Set(
     $$('#channels .channel-card')
@@ -992,7 +988,11 @@ function updateChannelSummary(node) {
   const label = $('.ch-label', node).value.trim();
   const enabled = $('.ch-enabled', node).checked;
   $('.ch-summary-title', node).textContent = label || `${type} channel`;
-  $('.ch-summary-meta', node).textContent = type;
+  const evts = [];
+  if ($('.ch-evt-failure', node).checked) evts.push('failures');
+  if ($('.ch-evt-ipchange', node).checked) evts.push('IP change');
+  if ($('.ch-evt-success', node).checked) evts.push('successful');
+  $('.ch-summary-meta', node).textContent = `${type} · ${evts.length ? evts.join(', ') : 'no events'}`;
   const badge = $('.ch-summary-badge', node);
   badge.textContent = enabled ? 'enabled' : 'disabled';
   badge.className =
@@ -1008,6 +1008,10 @@ function makeChannelRow(c = {}, { expanded = false } = {}) {
   $('.ch-type', node).value = c.type || 'discord';
   $('.ch-label', node).value = c.label || '';
   $('.ch-enabled', node).checked = c.enabled !== false;
+  const ev = c.events || {};
+  $('.ch-evt-failure', node).checked = ev.failure !== false; // default on
+  $('.ch-evt-ipchange', node).checked = ev.ip_change !== false; // default on
+  $('.ch-evt-success', node).checked = Boolean(ev.success); // default off
   $('.ch-url', node).value = c.url || '';
   $('.ch-format', node).value = c.format === 'text' ? 'text' : 'json';
 
@@ -1028,6 +1032,9 @@ function makeChannelRow(c = {}, { expanded = false } = {}) {
   });
   $('.ch-label', node).addEventListener('input', () => updateChannelSummary(node));
   $('.ch-enabled', node).addEventListener('change', () => updateChannelSummary(node));
+  $$('.ch-evt-failure, .ch-evt-ipchange, .ch-evt-success', node).forEach((cb) =>
+    cb.addEventListener('change', () => updateChannelSummary(node))
+  );
   $('.ch-save', node).addEventListener('click', () => saveChannel(node));
   $('.ch-delete', node).addEventListener('click', () => deleteChannel(node));
   $('.ch-test', node).addEventListener('click', () => testChannel(node));
@@ -1042,7 +1049,7 @@ function makeChannelRow(c = {}, { expanded = false } = {}) {
 }
 
 async function saveChannel(node) {
-  await saveConfig({ btn: $('.ch-save', node), msg: $('#save-msg'), verb: 'Saved channel' });
+  await saveConfig({ btn: $('.ch-save', node), msg: $('.ch-msg', node), verb: 'Saved channel' });
 }
 
 async function deleteChannel(node) {
@@ -1095,16 +1102,14 @@ function collectNotifications() {
       url: $('.ch-url', node).value.trim(),
       format: $('.ch-format', node).value,
       auth_header: authVal || (node.dataset.hasAuth ? REDACTED : ''),
+      events: {
+        failure: $('.ch-evt-failure', node).checked,
+        ip_change: $('.ch-evt-ipchange', node).checked,
+        success: $('.ch-evt-success', node).checked,
+      },
     };
   });
-  return {
-    events: {
-      failure: $('#notif-failure').checked,
-      ip_change: $('#notif-ipchange').checked,
-      success: $('#notif-success').checked,
-    },
-    channels,
-  };
+  return { channels };
 }
 
 // ---------- heartbeat monitors ----------
@@ -1910,9 +1915,6 @@ async function init() {
     $('#waf-lists').appendChild(makeWafRow({}, { expanded: true }));
     updateWafEmpty();
   });
-  $('#notif-events-save').addEventListener('click', () =>
-    saveConfig({ btn: $('#notif-events-save'), msg: $('#notif-events-msg'), verb: 'Saved' })
-  );
   $('#add-channel').addEventListener('click', () => {
     $('#channels').appendChild(makeChannelRow({}, { expanded: true }));
     updateChannelsEmpty();

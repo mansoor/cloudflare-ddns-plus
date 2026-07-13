@@ -466,7 +466,6 @@ export async function runUpdate(
 // Decide which notifications to send for this run and fan them out. Updates the
 // persisted last-IP so an IP change only alerts once.
 async function dispatchNotifications(cfg, { result, message, records, ipv4, ipv6 }) {
-  const events = cfg.notifications?.events || {};
   const channels = cfg.notifications?.channels || [];
   const enabled = channels.filter((c) => c.enabled);
 
@@ -478,9 +477,11 @@ async function dispatchNotifications(cfg, { result, message, records, ipv4, ipv6
 
   if (!enabled.length) return;
 
+  // Build a payload for whatever actually happened this run; each channel then
+  // opts in per event via its own preferences (c.events).
   const payloads = [];
 
-  if (events.ip_change && (v4Changed || v6Changed)) {
+  if (v4Changed || v6Changed) {
     const lines = [];
     if (v4Changed) lines.push(`IPv4: ${last.v4} → ${ipv4}`);
     if (v6Changed) lines.push(`IPv6: ${last.v6} → ${ipv6}`);
@@ -493,7 +494,7 @@ async function dispatchNotifications(cfg, { result, message, records, ipv4, ipv6
     });
   }
 
-  if (events.failure && (result === 'error' || result === 'partial')) {
+  if (result === 'error' || result === 'partial') {
     const errs = records.filter((r) => r.status === 'error').map((r) => `• ${r.type} ${r.fqdn}: ${r.detail}`);
     payloads.push({
       event: 'failure',
@@ -504,21 +505,22 @@ async function dispatchNotifications(cfg, { result, message, records, ipv4, ipv6
     });
   }
 
-  if (events.success) {
-    const changed = records.filter((r) => ['created', 'updated', 'deleted'].includes(r.status));
-    if (changed.length) {
-      payloads.push({
-        event: 'success',
-        title: 'DNS records updated',
-        message: changed.map((r) => `• ${r.detail}`).join('\n'),
-        ipv4,
-        ipv6,
-      });
-    }
+  const changed = records.filter((r) => ['created', 'updated', 'deleted'].includes(r.status));
+  if (changed.length) {
+    payloads.push({
+      event: 'success',
+      title: 'DNS records updated',
+      message: changed.map((r) => `• ${r.detail}`).join('\n'),
+      ipv4,
+      ipv6,
+    });
   }
 
   for (const payload of payloads) {
-    const results = await notifyAll(enabled, payload);
+    // Only the channels that subscribed to this event get it.
+    const recipients = enabled.filter((c) => c.events?.[payload.event]);
+    if (!recipients.length) continue;
+    const results = await notifyAll(recipients, payload);
     for (const { channel, result: res } of results) {
       if (res.ok) {
         state.log('info', `Notified ${channel.type} (${channel.label || 'channel'}): ${payload.event}`);
