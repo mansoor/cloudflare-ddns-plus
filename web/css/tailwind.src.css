@@ -59,6 +59,16 @@
   .badge {
     @apply inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium;
   }
+  /* Card action buttons (Delete / Test / Cancel / Add): the row of them doesn't
+     fit a phone with text labels, so show just an icon below sm: and the full
+     label from sm: up. Pair with max-sm:px-2.5 to keep the icon button compact,
+     and always give the button an aria-label/title for the icon-only state. */
+  .btn-ico {
+    @apply h-4 w-4 shrink-0 sm:hidden;
+  }
+  .btn-txt {
+    @apply hidden sm:inline;
+  }
 }
 
 /* The stepper draws its own arrows — hide the browser's native spinners. */
