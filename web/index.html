@@ -214,7 +214,9 @@
                 <h2 class="text-sm font-semibold">Cloudflare zones</h2>
                 <p class="text-xs text-slate-500">Add a zone, verify your API token, then choose subdomains to keep in sync.</p>
               </div>
-              <button type="button" id="add-account" class="btn-add text-sm">+ Add zone</button>
+              <button type="button" id="add-account" class="btn-add text-sm max-sm:px-2.5" aria-label="Add zone" title="Add zone">
+                <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add zone</span>
+              </button>
             </div>
             <div id="accounts"></div>
             <div id="accounts-empty" class="hidden rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-600">
@@ -233,7 +235,9 @@
                 <h2 class="text-sm font-semibold">Cloudflare IP Lists (WAF)</h2>
                 <p class="text-xs text-slate-500">Keep an account-level IP List updated with your current IP, to reference in WAF/firewall rules. Token needs <b>Account → Account Filter Lists → Edit</b>.</p>
               </div>
-              <button type="button" id="add-waf" class="btn-add text-sm">+ Add list</button>
+              <button type="button" id="add-waf" class="btn-add text-sm max-sm:px-2.5" aria-label="Add list" title="Add list">
+                <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add list</span>
+              </button>
             </div>
             <div id="waf-lists"></div>
             <div id="waf-empty" class="hidden rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-600">
@@ -252,7 +256,9 @@
                 <h2 class="text-sm font-semibold">Other DDNS providers</h2>
                 <p class="text-xs text-slate-500">Keep a one-off dynamic host on DuckDNS or a DynDNS2 provider (No-IP, Dynu, Namecheap…) updated with your current IP.<br>Uses the same schedule and IP detection.</p>
               </div>
-              <button type="button" id="add-ddns" class="btn-add shrink-0 whitespace-nowrap text-sm">+ Add provider</button>
+              <button type="button" id="add-ddns" class="btn-add shrink-0 whitespace-nowrap text-sm max-sm:px-2.5" aria-label="Add provider" title="Add provider">
+                <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add provider</span>
+              </button>
             </div>
             <div id="ddns-list"></div>
             <div id="ddns-empty" class="hidden rounded-lg border border-dashed border-slate-300 px-4 py-8 text-center text-sm text-slate-500 dark:border-slate-600">
@@ -382,7 +388,9 @@
               <div>
                 <div class="mb-2 flex items-center justify-between">
                   <label class="label mb-0">Channels</label>
-                  <button type="button" id="add-channel" class="btn-add text-xs">+ Add channel</button>
+                  <button type="button" id="add-channel" class="btn-add text-xs max-sm:px-2.5" aria-label="Add channel" title="Add channel">
+                    <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add channel</span>
+                  </button>
                 </div>
                 <div id="channels"></div>
                 <div id="channels-empty" class="hidden rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-slate-600">
@@ -398,7 +406,9 @@
                   <h2 class="text-sm font-semibold">Heartbeat monitoring</h2>
                   <p class="text-xs text-slate-500">Ping an uptime monitor after each scheduled run — it alerts you if this updater stops, in case of app crash and notification can't be sent. Supports <b>Healthchecks.io</b>, <b>Uptime Kuma</b>, <b>Better Stack</b>, and a <b>Custom URL</b>.</p>
                 </div>
-                <button type="button" id="add-heartbeat" class="btn-add shrink-0 text-xs">+ Add monitor</button>
+                <button type="button" id="add-heartbeat" class="btn-add shrink-0 text-xs max-sm:px-2.5" aria-label="Add monitor" title="Add monitor">
+                  <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add monitor</span>
+                </button>
               </div>
               <div id="heartbeats" class="space-y-2"></div>
               <div id="heartbeats-empty" class="rounded-lg border border-dashed border-slate-300 px-4 py-6 text-center text-xs text-slate-500 dark:border-slate-600">
@@ -539,19 +549,25 @@
             <div class="sm:col-span-2">
               <div class="mb-1 flex items-center justify-between">
                 <label class="label mb-0">Subdomains</label>
-                <button type="button" class="btn-add text-xs acc-add-sub">+ Add subdomain</button>
+                <button type="button" class="btn-add text-xs max-sm:px-2.5 acc-add-sub" aria-label="Add subdomain" title="Add subdomain">
+                  <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add subdomain</span>
+                </button>
               </div>
               <p class="mb-2 text-xs text-slate-500">Use an empty name or <code>@</code> for the root domain, <code>*</code> for wildcard.</p>
               <div class="acc-subs space-y-2"></div>
             </div>
           </div>
           <!-- Per-card actions -->
-          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
-            <button type="button" class="btn-danger text-sm acc-delete">Delete zone</button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm max-sm:px-2.5 acc-delete" aria-label="Delete zone" title="Delete zone">
+              <svg class="btn-ico"><use href="#ico-trash" /></svg><span class="btn-txt">Delete zone</span>
+            </button>
             <div class="flex items-center gap-2">
               <span class="acc-save-msg text-xs"></span>
-              <button type="button" class="btn-secondary text-sm acc-cancel">Cancel</button>
-              <button type="button" class="btn-primary text-sm acc-save">Save zone</button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 acc-cancel" aria-label="Cancel" title="Cancel">
+                <svg class="btn-ico"><use href="#ico-x" /></svg><span class="btn-txt">Cancel</span>
+              </button>
+              <button type="button" class="btn-primary text-sm acc-save"><span class="sm:hidden">Save</span><span class="hidden sm:inline">Save zone</span></button>
             </div>
           </div>
         </div>
@@ -605,11 +621,15 @@
               </select>
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
-            <button type="button" class="btn-danger text-sm waf-delete">Delete list</button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm max-sm:px-2.5 waf-delete" aria-label="Delete list" title="Delete list">
+              <svg class="btn-ico"><use href="#ico-trash" /></svg><span class="btn-txt">Delete list</span>
+            </button>
             <div class="flex items-center gap-2">
-              <button type="button" class="btn-secondary text-sm waf-cancel">Cancel</button>
-              <button type="button" class="btn-primary text-sm waf-save">Save list</button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 waf-cancel" aria-label="Cancel" title="Cancel">
+                <svg class="btn-ico"><use href="#ico-x" /></svg><span class="btn-txt">Cancel</span>
+              </button>
+              <button type="button" class="btn-primary text-sm waf-save"><span class="sm:hidden">Save</span><span class="hidden sm:inline">Save list</span></button>
             </div>
           </div>
         </div>
@@ -682,13 +702,19 @@
               <input class="input ch-auth" type="password" placeholder="Authorization: Bearer …" autocomplete="off" />
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
-            <button type="button" class="btn-danger text-sm ch-delete">Delete</button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm max-sm:px-2.5 ch-delete" aria-label="Delete channel" title="Delete channel">
+              <svg class="btn-ico"><use href="#ico-trash" /></svg><span class="btn-txt">Delete</span>
+            </button>
             <div class="flex items-center gap-2">
               <span class="ch-msg text-xs"></span>
-              <button type="button" class="btn-secondary text-sm ch-test">Send test</button>
-              <button type="button" class="btn-secondary text-sm ch-cancel">Cancel</button>
-              <button type="button" class="btn-primary text-sm ch-save">Save channel</button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 ch-test" aria-label="Send test" title="Send test">
+                <svg class="btn-ico"><use href="#ico-send" /></svg><span class="btn-txt">Send test</span>
+              </button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 ch-cancel" aria-label="Cancel" title="Cancel">
+                <svg class="btn-ico"><use href="#ico-x" /></svg><span class="btn-txt">Cancel</span>
+              </button>
+              <button type="button" class="btn-primary text-sm ch-save"><span class="sm:hidden">Save</span><span class="hidden sm:inline">Save channel</span></button>
             </div>
           </div>
         </div>
@@ -742,13 +768,19 @@
               <p class="hb-url-hint mt-1 hidden text-xs text-slate-500"></p>
             </div>
           </div>
-          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
-            <button type="button" class="btn-danger text-sm hb-delete">Delete</button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm max-sm:px-2.5 hb-delete" aria-label="Delete monitor" title="Delete monitor">
+              <svg class="btn-ico"><use href="#ico-trash" /></svg><span class="btn-txt">Delete</span>
+            </button>
             <div class="flex items-center gap-2">
               <span class="hb-msg text-xs"></span>
-              <button type="button" class="btn-secondary text-sm hb-test">Test</button>
-              <button type="button" class="btn-secondary text-sm hb-cancel">Cancel</button>
-              <button type="button" class="btn-primary text-sm hb-save">Save monitor</button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 hb-test" aria-label="Test monitor" title="Test monitor">
+                <svg class="btn-ico"><use href="#ico-send" /></svg><span class="btn-txt">Test</span>
+              </button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 hb-cancel" aria-label="Cancel" title="Cancel">
+                <svg class="btn-ico"><use href="#ico-x" /></svg><span class="btn-txt">Cancel</span>
+              </button>
+              <button type="button" class="btn-primary text-sm hb-save"><span class="sm:hidden">Save</span><span class="hidden sm:inline">Save monitor</span></button>
             </div>
           </div>
         </div>
@@ -817,7 +849,9 @@
             <div class="ddns-urlrows ddns-field sm:col-span-2">
               <div class="mb-1 flex items-center justify-between">
                 <label class="label mb-0 ddns-urls-title">Update tokens / URLs</label>
-                <button type="button" class="btn-add text-xs ddns-add-url">+ Add URL</button>
+                <button type="button" class="btn-add text-xs max-sm:px-2.5 ddns-add-url" aria-label="Add URL" title="Add URL">
+                  <svg class="btn-ico"><use href="#ico-plus" /></svg><span class="btn-txt">+ Add URL</span>
+                </button>
               </div>
               <p class="ddns-urls-hint mb-2 text-xs text-slate-500">Each host's update token or full update URL (FreeDNS → Dynamic DNS). Shown in plain text.</p>
               <div class="ddns-urls space-y-2"></div>
@@ -874,12 +908,18 @@
             </div>
             <p class="ddns-verify-msg sm:col-span-2 text-xs"></p>
           </div>
-          <div class="mt-4 flex items-center justify-between gap-3 border-t border-slate-200 pt-3 dark:border-slate-700">
-            <button type="button" class="btn-danger text-sm ddns-delete">Delete</button>
+          <div class="mt-4 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-slate-200 pt-3 dark:border-slate-700">
+            <button type="button" class="btn-danger text-sm max-sm:px-2.5 ddns-delete" aria-label="Delete provider" title="Delete provider">
+              <svg class="btn-ico"><use href="#ico-trash" /></svg><span class="btn-txt">Delete</span>
+            </button>
             <div class="flex items-center gap-2">
-              <button type="button" class="btn-secondary text-sm ddns-test">Test</button>
-              <button type="button" class="btn-secondary text-sm ddns-cancel">Cancel</button>
-              <button type="button" class="btn-primary text-sm ddns-save">Save provider</button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 ddns-test" aria-label="Test provider" title="Test provider">
+                <svg class="btn-ico"><use href="#ico-send" /></svg><span class="btn-txt">Test</span>
+              </button>
+              <button type="button" class="btn-secondary text-sm max-sm:px-2.5 ddns-cancel" aria-label="Cancel" title="Cancel">
+                <svg class="btn-ico"><use href="#ico-x" /></svg><span class="btn-txt">Cancel</span>
+              </button>
+              <button type="button" class="btn-primary text-sm ddns-save"><span class="sm:hidden">Save</span><span class="hidden sm:inline">Save provider</span></button>
             </div>
           </div>
         </div>
@@ -915,6 +955,22 @@
         <button type="button" class="btn-ghost text-sm text-red-600 sub-remove">✕</button>
       </div>
     </template>
+
+    <!-- Icon sprite for the mobile icon-only card action buttons (.btn-ico). -->
+    <svg class="hidden" aria-hidden="true" focusable="false">
+      <symbol id="ico-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2m3 0v14a1 1 0 0 1-1 1H6a1 1 0 0 1-1-1V6" /><path d="M10 11v6M14 11v6" />
+      </symbol>
+      <symbol id="ico-send" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M22 2 11 13" /><path d="M22 2 15 22l-4-9-9-4Z" />
+      </symbol>
+      <symbol id="ico-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M18 6 6 18M6 6l12 12" />
+      </symbol>
+      <symbol id="ico-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 5v14M5 12h14" />
+      </symbol>
+    </svg>
 
     <script src="/static/js/app.js"></script>
   </body>
