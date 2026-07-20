@@ -42,7 +42,7 @@ Prefer Docker? `docker compose up --build` builds and runs the container the sam
 ## Tests
 
 ```bash
-npm test           # node --test over test/
+npm test           # node --test — discovers test/*.test.js
 npm run test:watch # re-run on change
 ```
 
